@@ -108,18 +108,32 @@
         }
 
         function saveChanges() {
-            if (!selectedFeature) return;
+            async function saveChanges() {
+    if (!selectedFeature) return;
 
-            selectedFeature.properties.price = document.getElementById('lot-price').value;
-            selectedFeature.properties.status = document.getElementById('lot-status').value;
-            selectedFeature.properties.area_m = document.getElementById('lot-area').value;
-            selectedFeature.properties.Category = document.getElementById('lot-category').value;
-            selectedFeature.properties.Parking = document.getElementById('lot-parking').value;
-            selectedFeature.properties.Units = document.getElementById('lot-units').value;
-            selectedFeature.properties.Sub_Cat = document.getElementById('lot-subcategory').value;
-            selectedFeature.properties.Name = document.getElementById('lot-name').value;
-            
-            localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
+    selectedFeature.properties.price = document.getElementById('lot-price').value;
+    selectedFeature.properties.status = document.getElementById('lot-status').value;
+    selectedFeature.properties.area_m = document.getElementById('lot-area').value;
+    selectedFeature.properties.Category = document.getElementById('lot-category').value;
+    selectedFeature.properties.Parking = document.getElementById('lot-parking').value;
+    selectedFeature.properties.Units = document.getElementById('lot-units').value;
+    selectedFeature.properties.Sub_Cat = document.getElementById('lot-subcategory').value;
+    selectedFeature.properties.Name = document.getElementById('lot-name').value;
+
+    try {
+        const response = await fetch('/.netlify/functions/updateGeojson', {
+            method: 'POST',
+            body: JSON.stringify(geojsonData),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+        alert(result.message || 'Changes saved!');
+    } catch (error) {
+        alert('Error saving changes');
+    }
+}
+
         }
 
         function downloadGeoJSON() {
