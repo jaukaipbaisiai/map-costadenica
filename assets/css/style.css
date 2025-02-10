@@ -1,0 +1,55 @@
+/* style.css */
+:root {
+    --primary-purple: #6B3FA0;
+    --primary-green: #5CB270;
+    --primary-blue: #4A90E2;
+    --text-dark: #1F2937;
+    --text-light: #6B7280;
+    --navbar-height: 60px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+#map {
+    height: calc(100vh - var(--navbar-height));
+    width: 100%;
+}
+
+.navbar {
+    height: var(--navbar-height);
+    background-color: white;
+    border-bottom: 1px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1001;
+}
+
+.navbar img {
+    height: 40px;
+}
+
+/* Add to style.css */
+.dimension-line {
+    pointer-events: none;
+    stroke-linecap: round;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

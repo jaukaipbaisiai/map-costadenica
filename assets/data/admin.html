@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Admin Panel with Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        #map { height: 60vh; width: 100%; }
+        #editor { padding: 10px; }
+    </style>
+</head>
+<body onload="loadGeoJSON()">
+    <h2>COSTADENICOS ZEMELAPIO IRANKIS</h2>
+    <div id="map"></div>
+    <div id="editor" style="display:none;">
+        <h3>Edit Lot</h3>
+        <p><strong>Lot ID:</strong> <span id="lot-id"></span></p>
+        <label>Price: $<input type="text" id="lot-price"></label><br>
+        <label>Status:
+            <select id="lot-status">
+                <option value="For Sale">For Sale</option>
+                <option value="Sold">Sold</option>
+                <option value="Reserved">Reserved</option>
+            </select>
+        </label><br>
+        <label>Area: <input type="text" id="lot-area"></label><br>
+        <label>Category:
+            <select id="lot-category">
+                <option value="Single Family Homesites">Single Family Homesites</option>
+                <option value="Multi Family Homesites">Multi Family Homesites</option>
+                <option value="Commercial">Commercial</option>
+                <option value="Mixed Use">Mixed Use</option>
+            </select>
+        </label><br>
+        <label>Parking: <input type="text" id="lot-parking"></label><br>
+        <label>Units: <input type="text" id="lot-units"></label><br>
+        <label>Sub Category: <input type="text" id="lot-subcategory"></label><br>
+        <label>Name: <input type="text" id="lot-name"></label><br>
+        <button onclick="saveChanges()">Save Changes</button>
+        <button onclick="downloadGeoJSON()">Download JSON File</button>
+    </div>
+    
+    <script>
+        let geojsonData;
+        let selectedFeature;
+        let selectedLayer;
+        let map = L.map('map').setView([11.575, -86.244], 16);
+        let baseLayers = {
+            'Street View': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+            'Satellite View': L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            })
+        };
+        baseLayers['Street View'].addTo(map);
+        L.control.layers(baseLayers).addTo(map);
+
+        function getLotColor(status) {
+            switch (status) {
+                case "For Sale": return "green";
+                case "Sold": return "red";
+                case "Reserved": return "yellow";
+                case "": return "grey";
+                default: return "grey";
+            }
+        }
+
+        function loadGeoJSON() {
+            const savedData = localStorage.getItem('geojsonData');
+            if (savedData) {
+                geojsonData = JSON.parse(savedData);
+            } else {
+                fetch('lots.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        geojsonData = data;
+                        localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
+                    });
+            }
+            
+            L.geoJSON(geojsonData, {
+                style: function (feature) {
+                    return { color: getLotColor(feature.properties.status), weight: 2 };
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.on('click', function () {
+                        if (selectedLayer) {
+                            selectedLayer.setStyle({ color: getLotColor(selectedLayer.feature.properties.status) });
+                        }
+                        selectedLayer = layer;
+                        layer.setStyle({ color: "#00FFFF" }); // Cayenne color when selected
+                        
+                        selectedFeature = feature;
+                        document.getElementById('editor').style.display = 'block';
+                        document.getElementById('lot-id').innerText = feature.properties.plot_id;
+                        document.getElementById('lot-price').value = feature.properties.price || '';
+                        document.getElementById('lot-status').value = feature.properties.status || 'For Sale';
+                        document.getElementById('lot-area').value = feature.properties.area_m || '';
+                        document.getElementById('lot-category').value = feature.properties.Category || 'Single Family Homesites';
+                        document.getElementById('lot-parking').value = feature.properties.Parking || 'N/A';
+                        document.getElementById('lot-units').value = feature.properties.Units || '1';
+                        document.getElementById('lot-subcategory').value = feature.properties.Sub_Cat || '';
+                        document.getElementById('lot-name').value = feature.properties.Name || '';
+                    });
+                }
+            }).addTo(map);
+        }
+
+        function saveChanges() {
+            if (!selectedFeature) return;
+
+            selectedFeature.properties.price = document.getElementById('lot-price').value;
+            selectedFeature.properties.status = document.getElementById('lot-status').value;
+            selectedFeature.properties.area_m = document.getElementById('lot-area').value;
+            selectedFeature.properties.Category = document.getElementById('lot-category').value;
+            selectedFeature.properties.Parking = document.getElementById('lot-parking').value;
+            selectedFeature.properties.Units = document.getElementById('lot-units').value;
+            selectedFeature.properties.Sub_Cat = document.getElementById('lot-subcategory').value;
+            selectedFeature.properties.Name = document.getElementById('lot-name').value;
+            
+            localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
+        }
+
+        function downloadGeoJSON() {
+            const updatedGeoJSON = JSON.stringify(geojsonData, null, 4);
+            const blob = new Blob([updatedGeoJSON], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lots_updated.geojson';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
